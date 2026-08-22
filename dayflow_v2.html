@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>DAYFLOW — HR Intelligence Platform</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#12182B; --ink-soft:#616A80; --ink-faint:#9AA1B4;
+    --surface:#FFFFFF; --canvas:#F2F4FA; --line:#E7EAF3;
+    --navy:#1F2A44; --navy-2:#2B3A67;
+    --accent:#375DFB; --accent-soft:#EAEFFF;
+    --success:#12875A; --success-soft:#E6F6EE;
+    --warn:#B5790A; --warn-soft:#FBF1DC;
+    --danger:#C6403C; --danger-soft:#FBEAE9;
+    --violet:#6D5EF0; --violet-soft:#EDEBFD;
+    --teal:#1AA6A0; --teal-soft:#E4F5F4;
+    --gold:#D6A94A;
+    --radius:16px;
+    --shadow: 0 1px 2px rgba(18,24,43,0.04), 0 8px 24px -12px rgba(18,24,43,0.10);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--canvas); color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;}
+  a{text-decoration:none;}
+
+  /* ---------------- View switcher (not part of product UI, just this deliverable) ---------------- */
+  .view-switch{
+    position:sticky; top:0; z-index:50;
+    display:flex; justify-content:center; gap:8px;
+    background:var(--navy); padding:10px;
+  }
+  .view-switch button{
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:13px;
+    padding:9px 20px; border-radius:10px; border:1px solid transparent;
+    background:transparent; color:#AEB6D0; cursor:pointer; transition:all .15s;
+  }
+  .view-switch button.active{background:#fff; color:var(--navy);}
+
+  .view{display:none;}
+  .view.active{display:block;}
+
+  .app{display:grid; grid-template-columns:236px 1fr; min-height:100vh;}
+
+  /* ---------- Sidebar ---------- */
+  .sidebar{background:var(--navy); color:#C9D0E4; padding:20px 14px; display:flex; flex-direction:column; position:relative;}
+  .sidebar::before{content:""; position:absolute; top:0; left:0; bottom:0; width:3px; background:linear-gradient(180deg,var(--gold),var(--teal) 55%, var(--accent));}
+  .brand{display:flex; align-items:center; gap:10px; padding:6px 8px 20px 10px;}
+  .brand-mark{width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,var(--gold),#F0C878); display:flex; align-items:center; justify-content:center; font-family:'Manrope',sans-serif; font-weight:800; color:var(--navy); font-size:14px;}
+  .brand-text .name{font-family:'Manrope',sans-serif; font-weight:800; font-size:15.5px; color:#fff;}
+  .brand-text .tag{font-size:10.5px; color:#8E97B8; margin-top:1px;}
+
+  .nav-item{display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:10px; font-size:13px; font-weight:500; color:#AEB6D0; margin-bottom:2px;}
+  .nav-item svg{width:17px; height:17px; opacity:0.85; flex-shrink:0;}
+  .nav-item.active{background:rgba(255,255,255,0.08); color:#fff;}
+  .nav-item.active svg{opacity:1; color:var(--gold);}
+  .nav-new{margin-left:auto; font-size:9px; font-weight:800; background:var(--teal); color:#fff; padding:2px 6px; border-radius:6px; letter-spacing:0.3px;}
+  .nav-badge{margin-left:auto; background:var(--danger); color:#fff; font-size:10px; font-weight:700; padding:1px 7px; border-radius:20px;}
+  .nav-badge.g{background:var(--success);}
+  .nav-sep{height:1px; background:rgba(255,255,255,0.08); margin:12px 4px;}
+  .ai-btn{
+    margin-top:auto; display:flex; align-items:center; justify-content:center; gap:8px;
+    background:linear-gradient(135deg,var(--violet),var(--accent)); color:#fff;
+    font-family:'Manrope',sans-serif; font-weight:700; font-size:13px;
+    padding:12px; border-radius:12px; margin-bottom:10px; box-shadow:0 8px 20px -8px rgba(109,94,240,0.6);
+  }
+  .ai-btn svg{width:15px;height:15px;}
+
+  /* ---------- Main ---------- */
+  .main{padding:22px 30px 40px; max-width:1500px;}
+  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; gap:20px;}
+  .topbar h1{font-family:'Manrope',sans-serif; font-size:22px; font-weight:800; margin:0 0 3px; letter-spacing:-0.2px;}
+  .topbar .sub{color:var(--ink-soft); font-size:13px;}
+  .search{display:flex; align-items:center; gap:8px; background:var(--surface); border:1px solid var(--line); padding:9px 14px; border-radius:11px; flex:1; max-width:420px; color:var(--ink-faint); font-size:13px;}
+  .search svg{width:15px;height:15px;flex-shrink:0;}
+  .top-actions{display:flex; align-items:center; gap:12px; flex-shrink:0;}
+  .icon-btn{width:36px; height:36px; border-radius:11px; background:var(--surface); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; position:relative; flex-shrink:0;}
+  .icon-btn svg{width:16px;height:16px;color:var(--ink-soft);}
+  .count-badge{position:absolute; top:-5px; right:-5px; min-width:16px; height:16px; border-radius:20px; background:var(--danger); color:#fff; font-size:9.5px; font-weight:700; display:flex; align-items:center; justify-content:center; padding:0 3px; border:2px solid var(--canvas);}
+  .top-user{display:flex; align-items:center; gap:9px;}
+  .avatar{width:34px; height:34px; border-radius:50%; background:linear-gradient(135deg,var(--teal),var(--accent)); color:#fff; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center; font-family:'Manrope',sans-serif; flex-shrink:0;}
+  .top-user .who .n{font-size:13px; font-weight:700;}
+  .top-user .who .r{font-size:11px; color:var(--ink-soft);}
+  .btn-primary{display:flex; align-items:center; gap:7px; background:linear-gradient(135deg,var(--violet),var(--accent)); color:#fff; font-family:'Manrope'; font-weight:700; font-size:12.5px; padding:10px 16px; border-radius:11px; box-shadow:0 8px 20px -10px rgba(109,94,240,0.55); flex-shrink:0;}
+  .btn-primary svg{width:14px;height:14px;}
+  .date-pick{display:flex; align-items:center; gap:7px; border:1px solid var(--line); background:var(--surface); padding:9px 13px; border-radius:11px; font-size:12.5px; font-weight:600; color:var(--ink); flex-shrink:0;}
+  .date-pick svg{width:14px;height:14px; color:var(--ink-soft);}
+
+  /* ---------- KPI ---------- */
+  .kpi-row{display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:16px;}
+  .kpi-row.four{grid-template-columns:repeat(4,1fr);}
+  .kpi{background:var(--surface); border-radius:14px; padding:15px 16px 13px; border:1px solid var(--line); box-shadow:var(--shadow); display:flex; align-items:flex-start; gap:12px;}
+  .kpi-ic{width:38px; height:38px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .kpi-ic svg{width:19px;height:19px;}
+  .kpi .label{font-size:12px; font-weight:600; color:var(--ink-soft);}
+  .kpi .value{font-family:'Manrope',sans-serif; font-size:23px; font-weight:800; margin-top:3px; letter-spacing:-0.4px;}
+  .kpi .foot{font-size:11px; color:var(--ink-faint); margin-top:3px;}
+  .kpi .foot.pos{color:var(--success); font-weight:600;}
+  .kpi .foot.neg{color:var(--danger); font-weight:600;}
+  .kpi .foot.warn{color:var(--warn); font-weight:600;}
+
+  .card{background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px;}
+  .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:13px;}
+  .card-head h3{font-family:'Manrope',sans-serif; font-size:14.5px; font-weight:700; margin:0;}
+  .card-head h3 small{color:var(--ink-faint); font-weight:600; font-size:12px;}
+  .card-head .link{font-size:12px; color:var(--accent); font-weight:700;}
+
+  /* Alerts */
+  .alert{display:flex; align-items:flex-start; gap:12px; padding:13px 14px; border-radius:12px; border:1px solid; margin-bottom:10px;}
+  .alert:last-child{margin-bottom:0;}
+  .alert.high{background:var(--danger-soft); border-color:#F3CFCC;}
+  .alert.med{background:var(--warn-soft); border-color:#F2DFB2;}
+  .alert-ic{width:32px;height:32px;border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .alert-ic svg{width:16px;height:16px;}
+  .alert-title{font-size:13px; font-weight:700; color:var(--ink);}
+  .alert-body{font-size:12px; color:var(--ink-soft); margin-top:2px; line-height:1.4;}
+  .alert-meta{font-size:11px; color:var(--ink-faint); margin-top:5px;}
+  .alert-meta b{color:var(--ink);}
+  .alert-btn{margin-left:auto; align-self:center; font-family:'Manrope'; font-weight:700; font-size:11px; padding:8px 13px; border-radius:9px; color:#fff; flex-shrink:0; white-space:nowrap;}
+  .alert-btn.hi{background:var(--danger);}
+  .alert-btn.md{background:var(--warn);}
+
+  /* Leave impact */
+  .li-box{background:var(--danger-soft); border:1px solid #F3CFCC; border-radius:12px; padding:12px 14px; display:flex; gap:11px; align-items:flex-start; margin-bottom:14px;}
+  .li-box svg{width:18px;height:18px; color:var(--danger); flex-shrink:0; margin-top:1px;}
+  .li-box .t{font-size:13px; font-weight:700;}
+  .li-box .s{font-size:11.5px; color:var(--ink-soft); margin-top:1px;}
+  .impact-row{display:flex; align-items:center; padding:9px 0; border-top:1px solid var(--line); font-size:12.5px;}
+  .impact-row:first-of-type{border-top:none;}
+  .impact-team{font-weight:600; flex:1;}
+  .impact-tag{font-size:10px; font-weight:800; padding:3px 9px; border-radius:20px; letter-spacing:0.2px;}
+  .impact-tag.HIGH{background:var(--danger-soft); color:var(--danger);}
+  .impact-tag.MEDIUM{background:var(--warn-soft); color:var(--warn);}
+  .impact-tag.LOW{background:var(--success-soft); color:var(--success);}
+  .impact-head{display:flex; font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; color:var(--ink-faint); font-weight:700; padding-bottom:6px;}
+
+  /* quick actions list */
+  .qa-item{display:flex; align-items:center; gap:11px; padding:11px 12px; border:1px solid var(--line); border-radius:11px; margin-bottom:9px; font-size:13px; font-weight:600;}
+  .qa-item:last-child{margin-bottom:0;}
+  .qa-ic{width:30px;height:30px;border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .qa-ic svg{width:15px;height:15px;}
+
+  .dl-row{display:flex; align-items:center; font-size:12.5px; padding:6px 0;}
+  .dl-dot{width:8px;height:8px;border-radius:50%; margin-right:9px; flex-shrink:0;}
+  .dl-name{flex:1; font-weight:500;}
+  .dl-val{font-weight:700; font-family:'IBM Plex Mono',monospace; font-size:11.5px;}
+  .dl-pct{color:var(--ink-faint); margin-left:6px; font-size:11px;}
+
+  .legend{display:flex; gap:16px; font-size:12px; color:var(--ink-soft); margin-bottom:4px;}
+  .legend span{display:inline-flex; align-items:center; gap:6px;}
+  .legend i{width:16px; height:2.5px; border-radius:2px; display:inline-block;}
+
+  .list-item{display:flex; align-items:flex-start; gap:11px; padding:10px 0; border-bottom:1px solid var(--line);}
+  .list-item:last-child{border-bottom:none; padding-bottom:0;}
+  .li-icon{width:32px;height:32px;border-radius:9px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .li-icon svg{width:15px;height:15px;}
+  .li-title{font-size:12.5px; font-weight:600; line-height:1.35;}
+  .li-sub{font-size:11px; color:var(--ink-faint); margin-top:2px;}
+
+  .row-3col{display:grid; grid-template-columns:1.5fr 1fr 1fr; gap:16px; margin-bottom:16px; align-items:stretch;}
+  .row-3col-b{display:grid; grid-template-columns:1.1fr 1fr 1fr; gap:16px;}
+
+  /* ============ EMPLOYEE VIEW SPECIFIC ============ */
+  .checkin-card{display:flex; align-items:center; gap:16px;}
+  .ring-wrap{position:relative; width:74px; height:74px; flex-shrink:0;}
+  .progress-track{height:9px; border-radius:20px; background:var(--line); overflow:hidden; margin:8px 0 10px;}
+  .progress-fill{height:100%; border-radius:20px;}
+  .btn-checkin{background:var(--success); color:#fff; font-family:'Manrope'; font-weight:700; font-size:12.5px; padding:10px 0; border-radius:10px; text-align:center; display:flex; align-items:center; justify-content:center; gap:7px; width:100%;}
+  .btn-checkin svg{width:14px;height:14px;}
+
+  .mini-stat{display:flex; justify-content:space-between; font-size:11.5px; color:var(--ink-soft); margin-top:4px;}
+  .mini-stat b{color:var(--ink); font-weight:700;}
+
+  .bal-row{margin-bottom:12px;}
+  .bal-row:last-child{margin-bottom:0;}
+  .bal-top{display:flex; justify-content:space-between; font-size:12.5px; font-weight:600; margin-bottom:6px;}
+  .bal-top span:last-child{color:var(--ink-soft); font-weight:500; font-family:'IBM Plex Mono',monospace; font-size:11px;}
+
+  .cal-strip{display:grid; grid-template-columns:repeat(5,1fr); gap:8px; margin-bottom:12px;}
+  .cal-day{text-align:center; padding:9px 4px; border-radius:10px; border:1px solid var(--line);}
+  .cal-day.today{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .cal-day .dow{font-size:10px; color:inherit; opacity:0.7; font-weight:600; text-transform:uppercase;}
+  .cal-day .dnum{font-family:'Manrope'; font-weight:800; font-size:15px; margin-top:2px;}
+  .cal-day.today .dow{color:#C9D0E4;}
+  .sched-item{display:flex; align-items:center; gap:11px; padding:11px; background:var(--accent-soft); border-radius:11px;}
+  .sched-item .sq{width:4px; height:32px; background:var(--accent); border-radius:3px; flex-shrink:0;}
+  .sched-item .st{font-size:12.5px; font-weight:700;}
+  .sched-item .ss{font-size:11px; color:var(--ink-soft); margin-top:1px; display:flex; align-items:center; gap:5px;}
+
+  .team-item{display:flex; align-items:center; gap:10px; padding:9px 0; border-bottom:1px solid var(--line);}
+  .team-item:last-child{border-bottom:none;}
+  .status-dot{width:8px;height:8px;border-radius:50%; margin-left:auto; flex-shrink:0;}
+  .ql-item{display:flex; align-items:center; gap:10px; padding:10px 0; border-bottom:1px solid var(--line); font-size:12.5px; font-weight:600;}
+  .ql-item:last-child{border-bottom:none;}
+  .ql-ic{width:28px;height:28px;border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  .ql-ic svg{width:14px;height:14px;}
+</style>
+</head>
+<body>
+
+<div class="view-switch">
+  <button class="active" onclick="showView('mgr', this)">HR Manager View</button>
+  <button onclick="showView('emp', this)">Employee View</button>
+</div>
+
+<!-- ======================================================================= -->
+<!-- ============================ HR MANAGER VIEW ========================= -->
+<!-- ======================================================================= -->
+<div class="view active" id="view-mgr">
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div class="brand-text"><div class="name">DAYFLOW</div><div class="tag">HR Intelligence</div></div>
+    </div>
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>HR Dashboard</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M16 14.2c2.9.3 5 2.4 5 5.8"/></svg>Employees</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Attendance</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8l-5-5Z"/><path d="M14 3v5h5"/></svg>Leave Management</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M3.5 10.5h17"/><circle cx="8" cy="14.5" r="1"/></svg>Payroll</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8Z"/></svg>HR Intelligence<span class="nav-new">NEW</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>Reports &amp; Analytics</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 6.5H4.5C4.5 13.5 6 12 6 8Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>Notifications<span class="nav-badge">12</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a1.7 1.7 0 0 0 .3 1.9M12 4v.2M4.6 13a1.7 1.7 0 0 1-.3 1.9"/><path d="M4.6 11a1.7 1.7 0 0 0 .3-1.9M12 20v-.2M19.4 11a1.7 1.7 0 0 1-.3-1.9"/></svg>Settings</div>
+
+    <div class="ai-btn"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2 13.8 8.2 20 10l-6.2 1.8L12 18l-1.8-6.2L4 10l6.2-1.8Z"/></svg>AI Insights</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div><h1>HR Dashboard</h1><div class="sub">Overview of workforce &amp; HR intelligence</div></div>
+      <div class="search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.2-3.2"/></svg>Search employees, leave, reports…</div>
+      <div class="top-actions">
+        <div class="date-pick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg>May 15 – May 21, 2026</div>
+        <div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 6.5H4.5C4.5 13.5 6 12 6 8Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg></div>
+        <div class="top-user"><div class="avatar">PS</div><div class="who"><div class="n">Priya Sharma</div><div class="r">HR Manager</div></div></div>
+        <div class="btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"/></svg>Export Report</div>
+      </div>
+    </div>
+
+    <div class="kpi-row">
+      <div class="kpi"><div class="kpi-ic" style="background:var(--accent-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#375DFB" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.4 2.9-6 6.5-6s6.5 2.6 6.5 6"/><circle cx="17" cy="8.5" r="2.2"/><path d="M16 14.3c2.7.4 4.5 2.3 4.5 5.7"/></svg></div>
+        <div><div class="label">Total Employees</div><div class="value">248</div><div class="foot pos">▲ 12 from last month</div></div></div>
+      <div class="kpi"><div class="kpi-ic" style="background:var(--success-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#12875A" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.4 2.9-6 6.5-6s6.5 2.6 6.5 6"/><path d="m14.5 8 2 2 3.5-4"/></svg></div>
+        <div><div class="label">Present Today</div><div class="value">198</div><div class="foot">79.8% of total</div></div></div>
+      <div class="kpi"><div class="kpi-ic" style="background:var(--warn-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#B5790A" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.4 2.9-6 6.5-6s6.5 2.6 6.5 6"/><path d="M18 6v5M18 14h.01"/></svg></div>
+        <div><div class="label">On Leave Today</div><div class="value">32</div><div class="foot warn">12.9% of total</div></div></div>
+      <div class="kpi"><div class="kpi-ic" style="background:var(--danger-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#C6403C" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.4 2.9-6 6.5-6s6.5 2.6 6.5 6"/><path d="M15.5 6.5 20 11M20 6.5l-4.5 4.5"/></svg></div>
+        <div><div class="label">Absent Today</div><div class="value">18</div><div class="foot neg">7.3% of total</div></div></div>
+      <div class="kpi"><div class="kpi-ic" style="background:var(--violet-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#6D5EF0" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></svg></div>
+        <div><div class="label">Avg Attendance</div><div class="value">92.4%</div><div class="foot pos">▲ 3.6% from last month</div></div></div>
+    </div>
+
+    <div class="row-3col">
+      <div class="card">
+        <div class="card-head"><h3>HR Intelligence Alerts</h3><a class="link" href="#">View All</a></div>
+
+        <div class="alert high">
+          <div class="alert-ic" style="background:#F3CFCC;"><svg viewBox="0 0 24 24" fill="none" stroke="#C6403C" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg></div>
+          <div style="flex:1;">
+            <div class="alert-title">High Late Arrivals Detected</div>
+            <div class="alert-body">6 employees have been late 4+ times in the last 2 weeks.</div>
+            <div class="alert-meta">Impact: <b>MEDIUM</b> · 6 Employees</div>
+          </div>
+          <div class="alert-btn hi">Investigate</div>
+        </div>
+
+        <div class="alert med">
+          <div class="alert-ic" style="background:#F2DFB2;"><svg viewBox="0 0 24 24" fill="none" stroke="#B5790A" stroke-width="2.2"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z"/><path d="M14 3v5h5"/></svg></div>
+          <div style="flex:1;">
+            <div class="alert-title">Leave Concentration Risk</div>
+            <div class="alert-body">4 members of Backend Team are on leave on Monday.</div>
+            <div class="alert-meta">Impact: <b>HIGH</b> · Backend Team</div>
+          </div>
+          <div class="alert-btn md">View Impact</div>
+        </div>
+
+        <div class="alert med">
+          <div class="alert-ic" style="background:#F2DFB2;"><svg viewBox="0 0 24 24" fill="none" stroke="#B5790A" stroke-width="2.2"><path d="M4 19V10M10 19V5M16 19v-7M21 19H3"/></svg></div>
+          <div style="flex:1;">
+            <div class="alert-title">Increasing Absenteeism</div>
+            <div class="alert-body">Absenteeism rate increased by 18% in last 3 weeks.</div>
+            <div class="alert-meta">Impact: <b>MEDIUM</b> · 9 Employees</div>
+          </div>
+          <div class="alert-btn md">Investigate</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Attendance Overview</h3></div>
+        <div style="display:flex; justify-content:center; margin:4px 0 12px;">
+          <svg width="150" height="150" viewBox="0 0 150 150">
+            <circle cx="75" cy="75" r="58" fill="none" stroke="#EEF0F7" stroke-width="20"/>
+            <circle cx="75" cy="75" r="58" fill="none" stroke="#12875A" stroke-width="20" stroke-dasharray="290.9 365" transform="rotate(-90 75 75)"/>
+            <circle cx="75" cy="75" r="58" fill="none" stroke="#D6A94A" stroke-width="20" stroke-dasharray="47 365" stroke-dashoffset="-290.9" transform="rotate(-90 75 75)"/>
+            <circle cx="75" cy="75" r="58" fill="none" stroke="#C6403C" stroke-width="20" stroke-dasharray="26.4 365" stroke-dashoffset="-337.9" transform="rotate(-90 75 75)"/>
+            <circle cx="75" cy="75" r="58" fill="none" stroke="#9AA1B4" stroke-width="20" stroke-dasharray="17.5 365" stroke-dashoffset="-364.3" transform="rotate(-90 75 75)"/>
+            <text x="75" y="72" text-anchor="middle" font-family="Manrope" font-weight="800" font-size="26" fill="#12182B">248</text>
+            <text x="75" y="90" text-anchor="middle" font-family="Inter" font-size="11" fill="#9AA1B4">Total</text>
+          </svg>
+        </div>
+        <div class="dl-row"><span class="dl-dot" style="background:#12875A"></span><span class="dl-name">Present</span><span class="dl-val">198</span><span class="dl-pct">(79.8%)</span></div>
+        <div class="dl-row"><span class="dl-dot" style="background:#D6A94A"></span><span class="dl-name">On Leave</span><span class="dl-val">32</span><span class="dl-pct">(12.9%)</span></div>
+        <div class="dl-row"><span class="dl-dot" style="background:#C6403C"></span><span class="dl-name">Absent</span><span class="dl-val">18</span><span class="dl-pct">(7.3%)</span></div>
+        <div class="dl-row"><span class="dl-dot" style="background:#9AA1B4"></span><span class="dl-name">Half Day</span><span class="dl-val">12</span><span class="dl-pct">(4.8%)</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Leave Impact <small>(This Week)</small></h3><a class="link" href="#">View All</a></div>
+        <div class="li-box">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.4 2.9-6 6.5-6s6.5 2.6 6.5 6"/></svg>
+          <div><div class="t">5 Leave Requests need your review</div><div class="s">High impact on 2 teams</div></div>
+        </div>
+        <div class="card-head" style="margin-bottom:2px;"><h3 style="font-size:12px;">Top Impacted Teams</h3></div>
+        <div class="impact-head"><span style="flex:1;">Team</span><span>Impact</span></div>
+        <div class="impact-row"><span class="impact-team">Backend Development</span><span class="impact-tag HIGH">HIGH</span></div>
+        <div class="impact-row"><span class="impact-team">Product Design</span><span class="impact-tag MEDIUM">MEDIUM</span></div>
+        <div class="impact-row"><span class="impact-team">QA Team</span><span class="impact-tag LOW">LOW</span></div>
+      </div>
+    </div>
+
+    <div class="row-3col-b">
+      <div class="card">
+        <div class="card-head"><h3>Trends &amp; Insights</h3></div>
+        <div class="legend"><span><i style="background:#375DFB"></i>Attendance %</span><span><i style="background:#C6403C"></i>Absenteeism %</span></div>
+        <svg viewBox="0 0 480 220" width="100%" height="200">
+          <line x1="0" y1="10" x2="480" y2="10" stroke="#EEF0F7"/><line x1="0" y1="55" x2="480" y2="55" stroke="#EEF0F7"/>
+          <line x1="0" y1="100" x2="480" y2="100" stroke="#EEF0F7"/><line x1="0" y1="145" x2="480" y2="145" stroke="#EEF0F7"/>
+          <line x1="0" y1="190" x2="480" y2="190" stroke="#EEF0F7"/>
+          <text x="0" y="14" font-size="10" fill="#9AA1B4">100%</text><text x="0" y="59" font-size="10" fill="#9AA1B4">80%</text>
+          <text x="0" y="104" font-size="10" fill="#9AA1B4">60%</text><text x="0" y="149" font-size="10" fill="#9AA1B4">40%</text>
+          <text x="0" y="194" font-size="10" fill="#9AA1B4">20%</text>
+          <path d="M32,55 L94,58 L156,60 L218,68 L280,60 L342,55 L404,58 L462,52" fill="none" stroke="#375DFB" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <g fill="#375DFB"><circle cx="32" cy="55" r="3"/><circle cx="94" cy="58" r="3"/><circle cx="156" cy="60" r="3"/><circle cx="218" cy="68" r="3"/><circle cx="280" cy="60" r="3"/><circle cx="342" cy="55" r="3"/><circle cx="404" cy="58" r="3"/><circle cx="462" cy="52" r="3"/></g>
+          <path d="M32,168 L94,160 L156,165 L218,158 L280,163 L342,155 L404,162 L462,158" fill="none" stroke="#C6403C" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <g fill="#C6403C"><circle cx="32" cy="168" r="3"/><circle cx="94" cy="160" r="3"/><circle cx="156" cy="165" r="3"/><circle cx="218" cy="158" r="3"/><circle cx="280" cy="163" r="3"/><circle cx="342" cy="155" r="3"/><circle cx="404" cy="162" r="3"/><circle cx="462" cy="158" r="3"/></g>
+          <text x="20" y="212" font-size="10.5" fill="#9AA1B4">May 15</text><text x="82" y="212" font-size="10.5" fill="#9AA1B4">May 16</text>
+          <text x="144" y="212" font-size="10.5" fill="#9AA1B4">May 17</text><text x="206" y="212" font-size="10.5" fill="#9AA1B4">May 18</text>
+          <text x="268" y="212" font-size="10.5" fill="#9AA1B4">May 19</text><text x="330" y="212" font-size="10.5" fill="#9AA1B4">May 20</text>
+          <text x="440" y="212" font-size="10.5" fill="#9AA1B4">May 21</text>
+        </svg>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Upcoming Important Dates</h3><a class="link" href="#">View Calendar</a></div>
+        <div class="list-item"><div class="li-icon" style="background:var(--accent-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#375DFB" stroke-width="2"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></div><div><div class="li-title">Payroll Processing</div><div class="li-sub">May 25, 2026</div></div></div>
+        <div class="list-item"><div class="li-icon" style="background:var(--success-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#12875A" stroke-width="2"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></div><div><div class="li-title">Performance Review Cycle</div><div class="li-sub">Jun 1 – Jun 15, 2026</div></div></div>
+        <div class="list-item"><div class="li-icon" style="background:var(--violet-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#6D5EF0" stroke-width="2"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></div><div><div class="li-title">Company Offsite</div><div class="li-sub">Jun 28, 2026</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Quick Actions</h3></div>
+        <div class="qa-item"><div class="qa-ic" style="background:var(--violet-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#6D5EF0" stroke-width="2"><circle cx="9" cy="8" r="3"/><path d="M2.5 20c0-3.4 2.9-6 6.5-6s6.5 2.6 6.5 6M18 8v6M15 11h6"/></svg></div>Add Employee</div>
+        <div class="qa-item"><div class="qa-ic" style="background:var(--success-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#12875A" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L16 9"/></svg></div>Approve Leaves</div>
+        <div class="qa-item"><div class="qa-ic" style="background:var(--accent-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#375DFB" stroke-width="2"><path d="M4 20V11M10 20V4M16 20v-6M22 20H2"/></svg></div>View Reports</div>
+        <div class="qa-item"><div class="qa-ic" style="background:var(--warn-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#B5790A" stroke-width="2"><path d="M4 11c4-5 12-5 16 0M6.5 14.5l3 5.5h5l3-5.5"/></svg></div>Send Announcement</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- ======================================================================= -->
+<!-- ============================ EMPLOYEE VIEW ============================ -->
+<!-- ======================================================================= -->
+<div class="view" id="view-emp">
+<div class="app">
+  <div class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">D</div>
+      <div class="brand-text"><div class="name">DAYFLOW</div><div class="tag">My Workspace</div></div>
+    </div>
+    <div class="nav-item active"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>My Dashboard</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg>My Profile</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Attendance</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8l-5-5Z"/><path d="M14 3v5h5"/></svg>Leave</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3.5" y="6" width="17" height="13" rx="2"/><path d="M3.5 10.5h17"/></svg>Payslips</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 6.5H4.5C4.5 13.5 6 12 6 8Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg>Notifications<span class="nav-badge g">5</span></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M16 14.2c2.9.3 5 2.4 5 5.8"/></svg>My Team</div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3.5h8l4 4V20a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5Z"/></svg>Documents</div>
+    <div class="nav-sep"></div>
+    <div class="nav-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 13a1.7 1.7 0 0 0 .3 1.9M12 4v.2M4.6 13a1.7 1.7 0 0 1-.3 1.9"/></svg>Settings</div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div><h1>My Dashboard</h1><div class="sub">Welcome back, Arjun! 👋</div></div>
+      <div class="top-actions" style="margin-left:auto;">
+        <div class="icon-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 4 1.5 5.5 1.5 6.5H4.5C4.5 13.5 6 12 6 8Z"/><path d="M10 19a2 2 0 0 0 4 0"/></svg><div class="count-badge">5</div></div>
+        <div class="top-user"><div class="avatar">AK</div><div class="who"><div class="n">Arjun Kumar</div><div class="r">Software Engineer</div></div></div>
+      </div>
+    </div>
+
+    <div class="row-3col" style="grid-template-columns:1fr 1.15fr 1fr 1fr; display:grid; gap:14px;">
+      <div class="card checkin-card">
+        <div style="flex:1;">
+          <div class="card-head" style="margin-bottom:8px;"><h3>Check-in</h3></div>
+          <div style="font-size:12px; color:var(--ink-soft); margin-bottom:10px;">You're not checked in today</div>
+          <div class="btn-checkin"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><path d="M12 7v5l3 2"/><circle cx="12" cy="12" r="9"/></svg>Check In</div>
+        </div>
+        <div class="ring-wrap">
+          <svg width="74" height="74" viewBox="0 0 74 74">
+            <circle cx="37" cy="37" r="30" fill="none" stroke="#EEF0F7" stroke-width="9"/>
+            <circle cx="37" cy="37" r="30" fill="var(--accent-soft)"/>
+            <path d="M37 27a6 6 0 1 0 .01 0Z" fill="var(--accent)" opacity="0"/>
+          </svg>
+          <svg viewBox="0 0 24 24" fill="none" stroke="#375DFB" stroke-width="1.8" style="position:absolute; top:22px; left:22px; width:30px; height:30px;"><circle cx="9" cy="8" r="3"/><path d="M2.5 19c0-3 2.7-5.3 6.5-5.3s6.5 2.3 6.5 5.3"/><path d="M17 8l1.5 1.5L21 6.5"/></svg>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Attendance Overview</h3><div class="date-pick" style="padding:5px 10px; font-size:11.5px;">This Week</div></div>
+        <div style="font-family:'Manrope'; font-weight:800; font-size:26px;">4<span style="font-size:15px; color:var(--ink-faint); font-weight:600;"> / 5 Days</span></div>
+        <div style="font-size:11.5px; color:var(--ink-soft); margin-bottom:2px;">Present</div>
+        <div class="progress-track"><div class="progress-fill" style="width:80%; background:var(--success);"></div></div>
+        <div class="mini-stat"><span>Late Arrivals<br><b>1</b></span><span>Early Departures<br><b>0</b></span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Leave Balance</h3><a class="link" href="#">View All →</a></div>
+        <div class="bal-row">
+          <div class="bal-top"><span>Casual Leave</span><span>8 / 12 days</span></div>
+          <div class="progress-track" style="height:7px;"><div class="progress-fill" style="width:66%; background:var(--accent);"></div></div>
+        </div>
+        <div class="bal-row">
+          <div class="bal-top"><span>Sick Leave</span><span>6 / 12 days</span></div>
+          <div class="progress-track" style="height:7px;"><div class="progress-fill" style="width:50%; background:var(--warn);"></div></div>
+        </div>
+        <div class="bal-row">
+          <div class="bal-top"><span>Earned Leave</span><span>10 / 15 days</span></div>
+          <div class="progress-track" style="height:7px;"><div class="progress-fill" style="width:66%; background:var(--teal);"></div></div>
+        </div>
+      </div>
+
+      <div class="card" style="display:flex; flex-direction:column;">
+        <div class="card-head"><h3>Next Payroll</h3></div>
+        <div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;">
+          <div class="li-icon" style="background:var(--accent-soft); width:36px; height:36px;"><svg viewBox="0 0 24 24" fill="none" stroke="#375DFB" stroke-width="2"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M8 3v4M16 3v4M3.5 10h17"/></svg></div>
+          <div><div class="li-title" style="font-size:14px;">May 31, 2026</div><div class="li-sub">Salary for May 2026</div></div>
+        </div>
+        <div style="margin-top:auto; border:1px solid var(--line); border-radius:10px; text-align:center; padding:9px; font-size:12.5px; font-weight:700; color:var(--ink);">View Payslip</div>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1.1fr 1.3fr 0.85fr 0.95fr; gap:14px; margin-top:14px;">
+      <div class="card">
+        <div class="card-head"><h3>My Schedule</h3><span style="font-size:11.5px; color:var(--ink-soft); font-weight:600;">May 2026</span></div>
+        <div class="cal-strip">
+          <div class="cal-day"><div class="dow">Mon</div><div class="dnum">19</div></div>
+          <div class="cal-day today"><div class="dow">Tue</div><div class="dnum">20</div></div>
+          <div class="cal-day"><div class="dow">Wed</div><div class="dnum">21</div></div>
+          <div class="cal-day"><div class="dow">Thu</div><div class="dnum">22</div></div>
+          <div class="cal-day"><div class="dow">Fri</div><div class="dnum">23</div></div>
+        </div>
+        <div class="sched-item">
+          <div class="sq"></div>
+          <div><div class="st">Team Standup</div><div class="ss">10:00 AM – 10:30 AM · Google Meet</div></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Recent Notifications</h3><a class="link" href="#">View All →</a></div>
+        <div class="list-item"><div class="li-icon" style="background:var(--success-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#12875A" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.3 2.3L16 9"/></svg></div><div><div class="li-title">Your leave request (May 24 – May 25) has been approved.</div><div class="li-sub">2 hours ago</div></div></div>
+        <div class="list-item"><div class="li-icon" style="background:var(--accent-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#375DFB" stroke-width="2"><path d="M7 3.5h8l4 4V20a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5Z"/></svg></div><div><div class="li-title">Project "Payment Module" deadline updated.</div><div class="li-sub">1 day ago</div></div></div>
+        <div class="list-item"><div class="li-icon" style="background:var(--warn-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#B5790A" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div><div><div class="li-title">Monthly All Hands on May 24 at 3:00 PM.</div><div class="li-sub">2 days ago</div></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Quick Links</h3></div>
+        <div class="ql-item"><div class="ql-ic" style="background:var(--violet-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#6D5EF0" stroke-width="2"><path d="M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8Z"/><path d="M14 3v5h5"/></svg></div>Apply Leave</div>
+        <div class="ql-item"><div class="ql-ic" style="background:var(--success-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#12875A" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>View Attendance</div>
+        <div class="ql-item"><div class="ql-ic" style="background:var(--accent-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#375DFB" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"/></svg></div>My Profile</div>
+        <div class="ql-item"><div class="ql-ic" style="background:var(--teal-soft);"><svg viewBox="0 0 24 24" fill="none" stroke="#1AA6A0" stroke-width="2"><path d="M7 3.5h8l4 4V20a.5.5 0 0 1-.5.5H7a.5.5 0 0 1-.5-.5V4a.5.5 0 0 1 .5-.5Z"/></svg></div>Company Policies</div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>My Team</h3><a class="link" href="#">View Team →</a></div>
+        <div class="team-item"><div class="avatar" style="width:28px;height:28px;font-size:10px;">SR</div><div><div class="li-title" style="font-size:12px;">Sneha Reddy</div><div class="li-sub">UI/UX Designer</div></div><span class="status-dot" style="background:var(--success);"></span></div>
+        <div class="team-item"><div class="avatar" style="width:28px;height:28px;font-size:10px; background:linear-gradient(135deg,#D6A94A,#F0C878);">VS</div><div><div class="li-title" style="font-size:12px;">Vikram Singh</div><div class="li-sub">Backend Developer</div></div><span class="status-dot" style="background:var(--success);"></span></div>
+        <div class="team-item"><div class="avatar" style="width:28px;height:28px;font-size:10px; background:linear-gradient(135deg,#6D5EF0,#9C90F8);">MI</div><div><div class="li-title" style="font-size:12px;">Meera Iyer</div><div class="li-sub">QA Engineer</div></div><span class="status-dot" style="background:var(--warn);"></span></div>
+        <div class="team-item"><div class="avatar" style="width:28px;height:28px;font-size:10px; background:linear-gradient(135deg,#C6403C,#E37F7B);">RD</div><div><div class="li-title" style="font-size:12px;">Rohan Das</div><div class="li-sub">DevOps Engineer</div></div><span class="status-dot" style="background:var(--ink-faint);"></span></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+function showView(id, btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById('view-'+id).classList.add('active');
+  document.querySelectorAll('.view-switch button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
